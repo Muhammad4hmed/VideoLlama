@@ -86,7 +86,7 @@ python video_chatgpt/eval/run_inference.py --model-name breakfast_finetuned_vide
 
 If you want to add some new metric, please modify the `video_chatgpt/eval/metrics.py` file.
 
-## Inference 
+## Chat Mode 
 
 You can run the chat-style inference
 ```
