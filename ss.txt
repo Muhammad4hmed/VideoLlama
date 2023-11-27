@@ -1,0 +1,44 @@
+torchrun --nproc_per_node=2 --master_port 29001 video_chatgpt/train/train_mem.py \
+          --model_name_or_path mmaaz60/LLaVA-7B-Lightening-v1-1 \
+          --version v1 \
+          --data_path ahmedfawad_train_v2.json \
+          --video_folder /home/waleed/ahmed/LLM/Video-ChatGPT/features_breakfast_fawad_final-v2 \
+          --tune_mm_mlp_adapter True \
+          --mm_use_vid_start_end \
+          --bf16 True \
+          --output_dir ./Fawad_ahmed_CPS_4 \
+          --num_train_epochs 3 \
+          --per_device_train_batch_size 1 \
+          --per_device_eval_batch_size 1 \
+          --gradient_accumulation_steps 1 \
+          --evaluation_strategy "no" \
+          --save_strategy "steps" \
+          --save_steps 1000 \
+          --save_total_limit 3 \
+          --learning_rate 2e-4 \
+          --weight_decay 0. \
+          --warmup_ratio 0.03 \
+          --lr_scheduler_type "cosine" \
+          --logging_steps 100 \
+          --tf32 True \
+          --model_max_length 2048 \
+          --gradient_checkpointing True \
+          --lazy_preprocess True
+
+
+
+python scripts/ahmed_json.py \
+        --input_json_file /home/waleed/ahmed/LLM/Breakfast/Breakfast/ \
+        --output_json_file huy.json
+
+export PYTHONPATH="./:$PYTHONPATH"
+
+python scripts/save_spatio_temporal_clip_features.py \
+        --video_dir_path /home/waleed/ahmed/LLM/Breakfast/Videos/BreakfastII_15fps_qvga_sync/ \
+        --clip_feat_path features_breakfast_fawad_final-v2
+
+python video_chatgpt/eval/run_inference_breakfast.py --model-name /home/waleed/ahmed/LLM/Video-ChatGPT/fawad_pretrainted_weights --projection_path /home/waleed/ahmed/LLM/Video-ChatGPT/Fawad_ahmed_CPS_4/model.bin
+
+python scripts/ahmed_json.py \
+        --input_json_file /home/waleed/ahmed/LLM/Breakfast/Breakfast/ \
+        --output_json_file ahmedfawad_train_v2.json
