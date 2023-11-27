@@ -62,7 +62,7 @@ def get_seq_frames(total_num_frames, desired_num_frames):
     return seq
 
 
-def get_spatio_temporal_features(features, num_temporal_tokens=100):
+def get_spatio_temporal_features(features, num_temporal_tokens=1000):
     t, s, c = features.shape
 
     temporal_tokens = np.mean(features, axis=1)
@@ -109,17 +109,18 @@ def main():
     augs = ['flip', 'bright', 'bright_flip','contrast', 'contrast_flip', 'crop', 'crop_flip', 'compress', 'compress_flip', 'sharp', 'sharp_flip']
     
     for video_name in tqdm(all_videos):
-        for cam in tqdm(glob.glob(video_name + '/*')):
-            for action in tqdm(glob.glob(cam + '/*.avi')):
+        # for cam in glob.glob(video_name + '/*'):
+        #     for action in glob.glob(cam + '/*.avi'):
+        if not "db" in video_name:
                 try:
-                    video_path = action #f"{video_dir_path}/{video_name}"
-                    # cont = False
-                    # for aug in augs:
-                    #     if aug in video_path:
-                    #         cont = True
-                    # if cont: continue
+                    video_path = video_name #f"{video_dir_path}/{video_name}"
+                    cont = False
+                    for aug in augs:
+                        if aug in video_path:
+                            cont = True
+                    if cont: continue
                     
-                    video_id = action.split('/')[-1].split('.')[0] + '_' + cam.split('/')[-1] #video_name.split('.')[0]
+                    video_id = video_name.split('/')[-1].split('.')[0] + '_' + video_name.split('/')[-1] #video_name.split('.')[0]
                     if os.path.exists(f"{clip_feat_path}/{video_id}.pkl"):  # Check if the file is already processed
                         load_video(video_path, video_id)
                         continue
@@ -130,7 +131,7 @@ def main():
 
                     n_chunk = len(video_tensor)
                     video_features = torch.FloatTensor(n_chunk, 1024).fill_(0)
-                    #all_layers = torch.FloatTensor(n_chunk, 25, 1024).fill_(0)
+                    all_layers = torch.FloatTensor(n_chunk, 25, 1024).fill_(0)
                     # print(n_chunk, infer_batch)
                     n_iter = int(math.ceil(n_chunk / float(infer_batch)))
                     for i in range(n_iter):
@@ -146,14 +147,13 @@ def main():
                         # print(select_hidden_state.shape)
                         batch_features = select_hidden_state # select_hidden_state[:, 1:]
                         video_features[min_ind:max_ind] = batch_features.detach().cpu()
-                        # for i, state in enumerate(hidden_states):
-                        #     all_layers[min_ind:max_ind, i] = state.detach().cpu()
+                        for i, state in enumerate(hidden_states):
+                            all_layers[min_ind:max_ind, i] = state.detach().cpu()
 
                     video_clip_features[video_id] = video_features.numpy().astype("float16")
-                    #all_features[video_id] = all_layers.numpy().astype("float16")
-                    #video_clip_features[video_id] = get_spatio_temporal_features(video_features.numpy().astype("float16"))
-                    # print(video_clip_features[video_id].shape)
-                    # print(all_features[video_id].shape)
+                    all_features[video_id] = all_layers.numpy().astype("float16")
+                    # video_clip_features[video_id] = get_spatio_temporal_features(video_features.numpy().astype("float16"))
+                    print(video_clip_features[video_id].shape)
                     counter += 1
                     # except Exception as e:
                     #     print(f"Can't process {video_path}")
@@ -165,20 +165,22 @@ def main():
                         #         pickle.dump(features, f)
                         # video_clip_features = {}
 
-                        for key in video_clip_features.keys():
-                            features = video_clip_features[key]
-                            #print(features.shape)
+                        for key in all_features.keys():
+                            features = all_features[key]
+                            key=key.replace('.avi','')
+                            key= "".join(key.split("_")[1:])
                             with open(f"{clip_feat_path}/{key}.pkl", 'wb') as f:
                                 pickle.dump(features, f)
                         all_features = {}
-                except Exception as e:
-                    print(e)
+                except:
                     print('skipped', video_name)
 
                 
     # for key in video_clip_features.keys():
     #     features = video_clip_features[key]
-    #     with open(f"{clip_feat_path}/{key}_video_Clip.pkl", 'wb') as f:
+    #     key=key.replace('.avi','')
+    #     key= "".join(key.split("_")[1:])
+    #     with open(f"{clip_feat_path}/{key}.pkl", 'wb') as f:
     #         pickle.dump(features, f)
 
 

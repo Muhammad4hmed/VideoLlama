@@ -9,10 +9,8 @@ import random
 import tqdm
 
 def load_dict_from_file(file_path):
-
     with open(file_path, 'r') as file:
         data = json.load(file)
-  
     return data
 
 def parse_args():
@@ -104,44 +102,41 @@ def main():
     for file in tqdm.tqdm(sorted(glob.glob(input_folder + '*'))):
         for cam in glob.glob(file + '/*'):
             for action in glob.glob(cam + '/*'):
-                try:
-                    video = action.split('/')[-1].split('.')[0] + '_' + cam.split('/')[-1]
-                    # if action in skip_them:
-                    #     # print('skipped', video)
-                    #     continue
-                    # try:
-                    questions_and_answers = {}
-                    question, answer = add_additional_questions(action.replace('Breakfast/Breakfast/','Breakfast/Videos/BreakfastII_15fps_qvga_sync/'))
-                    questions_and_answers[question] = answer
-                    questions_and_answers = extract_questions_and_answers(action, video, questions_and_answers)
-                    # except Exception as e:
-                    #     print('Error on', action)
-                    #     print(e)
-                    #     break
-                    j = 0
-                    rep = 0
-                    for question, answer in questions_and_answers.items():
-                        question = question.replace('\n','')
-                        answer = answer.replace('_', ' ')
-                        if j == 0: rep = 12 #try changing
-                        else: rep = 2
-                        for k in range(rep):
-                            if not augs[k % len(augs)] == '':
-                                new_video = "_".join(video.split('_')[:-1]) + '_' + augs[k % len(augs)] + '_' + video.split('_')[-1]
-                            else:
-                                new_video = video # uncomment all
-                            #new_video = video + '_all'
-                            output_content = {'id': new_video, 'video': f"{new_video}.pkl", 'conversations': []}
-                            if i % 2 == 0:
-                                output_content['conversations'].append({'from': 'human', 'value': f"{question}\n<video>"})
-                            else:
-                                output_content['conversations'].append({'from': 'human', 'value': f"<video>\n{question}"})
-                            output_content['conversations'].append({'from': 'gpt', 'value': answer})
-                            i += 1
-                            output_json_contents.append(output_content)
-                        j += 1
-                except:
-                    print('error '+str(video))
+                video = action.split('/')[-1].split('.')[0] + '_' + cam.split('/')[-1]
+                if action in skip_them:
+                    # print('skipped', video)
+                    continue
+                # try:
+                questions_and_answers = {}
+                question, answer = add_additional_questions(action.replace('Breakfast/Breakfast/','Breakfast/Videos/BreakfastII_15fps_qvga_sync/'))
+                questions_and_answers[question] = answer
+                questions_and_answers = extract_questions_and_answers(action, video, questions_and_answers)
+                # except Exception as e:
+                #     print('Error on', action)
+                #     print(e)
+                #     break
+                j = 0
+                rep = 0
+                for question, answer in questions_and_answers.items():
+                    question = question.replace('\n','')
+                    answer = answer.replace('_', ' ')
+                    if j == 0: rep = 12
+                    else: rep = 2
+                    for k in range(rep):
+                        if not augs[k % len(augs)] == '':
+                            new_video = "_".join(video.split('_')[:-1]) + '_' + augs[k % len(augs)] + '_' + video.split('_')[-1]
+                        else:
+                            new_video = video # uncomment all
+                        #new_video = video + '_all'
+                        output_content = {'id': new_video, 'video': f"{new_video}.pkl", 'conversations': []}
+                        if i % 2 == 0:
+                            output_content['conversations'].append({'from': 'human', 'value': f"{question}\n<video>"})
+                        else:
+                            output_content['conversations'].append({'from': 'human', 'value': f"<video>\n{question}"})
+                        output_content['conversations'].append({'from': 'gpt', 'value': answer})
+                        i += 1
+                        output_json_contents.append(output_content)
+                    j += 1
     
     print(f"Total annotations retained: {len(output_json_contents)}")
     with open(output_json_file, 'w') as f:

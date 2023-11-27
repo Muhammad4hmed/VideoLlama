@@ -9,10 +9,8 @@ import random
 import tqdm
 
 def load_dict_from_file(file_path):
-
     with open(file_path, 'r') as file:
         data = json.load(file)
-  
     return data
 
 def parse_args():
@@ -101,14 +99,22 @@ def main():
     i = 0
     augs = ['','flip', 'bright', 'bright_flip','contrast', 'contrast_flip', 'crop', 'crop_flip', 'compress', 'compress_flip', 'sharp', 'sharp_flip']
     skip_them = load_valid('valid.txt')
-    for file in tqdm.tqdm(sorted(glob.glob(input_folder + '*'))):
-        for cam in glob.glob(file + '/*'):
-            for action in glob.glob(cam + '/*'):
-                try:
+    outer_rep=10
+    inner_rep=1
+    while len(output_json_contents) != 54190:
+        if outer_rep <= inner_rep:
+            print("outer rep less than inner rep")
+            outer_rep+=1
+            inner_rep=1
+            output_json_contents=[]
+            continue
+        for file in tqdm.tqdm(sorted(glob.glob(input_folder + '*'))):
+            for cam in glob.glob(file + '/*'):
+                for action in glob.glob(cam + '/*'):
                     video = action.split('/')[-1].split('.')[0] + '_' + cam.split('/')[-1]
-                    # if action in skip_them:
-                    #     # print('skipped', video)
-                    #     continue
+                    if action in skip_them:
+                        # print('skipped', video)
+                        continue
                     # try:
                     questions_and_answers = {}
                     question, answer = add_additional_questions(action.replace('Breakfast/Breakfast/','Breakfast/Videos/BreakfastII_15fps_qvga_sync/'))
@@ -123,8 +129,8 @@ def main():
                     for question, answer in questions_and_answers.items():
                         question = question.replace('\n','')
                         answer = answer.replace('_', ' ')
-                        if j == 0: rep = 12 #try changing
-                        else: rep = 2
+                        if j == 0: rep = outer_rep
+                        else: rep = inner_rep
                         for k in range(rep):
                             if not augs[k % len(augs)] == '':
                                 new_video = "_".join(video.split('_')[:-1]) + '_' + augs[k % len(augs)] + '_' + video.split('_')[-1]
@@ -140,8 +146,25 @@ def main():
                             i += 1
                             output_json_contents.append(output_content)
                         j += 1
-                except:
-                    print('error '+str(video))
+
+        if (len(output_json_contents)) == 54190 :
+             print(f"FINALLLLLLLLL  Outer Rep ={outer_rep}   and Inner Rep = {inner_rep}")
+             break
+        elif (len(output_json_contents)) > 54190:
+            print(f"Outer Rep ={outer_rep}   and Inner Rep = {inner_rep}")
+            outer_rep +=1
+            inner_rep=1
+            print(f"greater than 54190  {len(output_json_contents)}")
+            output_json_contents=[]
+           
+        else:
+            print("less than 54190")
+            inner_rep+=1
+            output_json_contents=[]
+
+
+
+    print(f"FINALLLLLLLLL  Outer Rep ={outer_rep}   and Inner Rep = {inner_rep}")
     
     print(f"Total annotations retained: {len(output_json_contents)}")
     with open(output_json_file, 'w') as f:
