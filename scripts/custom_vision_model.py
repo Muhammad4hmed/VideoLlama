@@ -35,6 +35,7 @@ from transformers.utils import (
 from transformers import CLIPConfig, CLIPTextConfig, CLIPVisionConfig
 
 
+
 logger = logging.get_logger(__name__)
 
 _CHECKPOINT_FOR_DOC = "openai/clip-vit-base-patch32"

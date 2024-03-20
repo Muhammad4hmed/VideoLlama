@@ -153,7 +153,7 @@ def initialize_model(model_name, projection_path=None):
     # full_state_dict = torch.load(model_name + '/adapter_model.bin', map_location="cpu")
     # set_peft_model_state_dict(model, full_state_dict)
     
-    model = PeftModel.from_pretrained(model, '50salads_finetuned_videochatgpt')
+    model = PeftModel.from_pretrained(model, '/home/waleed/ahmed/LLM/Video-ChatGPT/breakfast_finetuned_videochatgpt')
     
     model = model.merge_and_unload()
     # Load the weights from projection_path after resizing the token_embeddings

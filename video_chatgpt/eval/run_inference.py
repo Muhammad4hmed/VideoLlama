@@ -1,10 +1,10 @@
 import os
 import argparse
-import json
+import json,time
 import torch
 from tqdm import tqdm
-from video_chatgpt.eval.model_utils import initialize_model, load_video
-from video_chatgpt.eval.inference import video_chatgpt_infer
+from model_utils import initialize_model, load_video
+from inference import video_chatgpt_infer
 import pickle
 import warnings
 warnings.filterwarnings("ignore")
@@ -17,7 +17,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     # Define the command-line arguments
-    parser.add_argument('--feature_dir', help='Directory containing video files.', required=False, default = "features_breakfast")
+    parser.add_argument('--feature_dir', help='Directory containing video files.', required=False, default = "features_breakfast_fawad_final_v2")
     parser.add_argument('--gt_dir', help='Directory containing ground truths.', required=False, default = "/home/waleed/ahmed/LLM/Breakfast/Videos/BreakfastII_15fps_qvga_sync")
     parser.add_argument('--output_dir', help='Directory to save the model results JSON.', required=False, default='Predictions')
     parser.add_argument('--output_name', help='Name of the file for storing results JSON.', required=False, default="Predictions_Breakfast")
@@ -68,21 +68,23 @@ def run_inference(args):
     with open(args.valid_path, 'r') as f:
         for line in f.readlines():
             line = line.replace('\n','')
-            name = line.split('/')[-1].split('.')[0] + '_' + line.split('/')[-2]
+            name = line.split('.')[0] 
             vid_names.append(name)
-            actions.append(" ".join(line.split('/')[-1].split('.')[0].split('_')[1:]))
+            # actions.append(" ".join(line.split('/')[-1].split('.')[0].split('_')[1:]))
+            # print("Action : "+ str(" ".join(line.split('/')[-1].split('.')[0].split('_')[1:])))
             total_frames = frames[name]
             act_total_frame_num.append(total_frames)
             seg_size = float(total_frames - 1) / 1000
             seg_sizes.append(seg_size)
             total_frame_num.append(int(total_frames/seg_size))
-            video = args.feature_dir + '/' + name + '_all.pkl'
+            print(name)
+            video = "/home/waleed/ahmed/LLM/Video-ChatGPT/fawad_1000_50salad" + '/' + name + '.pkl'
             with open(video, "rb") as f1:
                 features = pickle.load(f1)
                 vid_features.append(features)
             f1.close()
 
-            gt = args.gt_dir + '/' + line + '.labels'
+            gt = '/home/waleed/ahmed/LLM/50Salads/timestampGT2'+ '/' + name
             if not os.path.exists(gt): gt = gt.replace('ch0', 'ch1')
             with open(gt, "r") as f1:
                 truth = []
@@ -93,7 +95,7 @@ def run_inference(args):
     i = 0
     for sample in tqdm(vid_features):
         sample_out = {}
-        question = f'List down all the segments. action is {actions[i]}.'# maximum frames are {act_total_frame_num[i]}'
+        question = f'List down all the segments. action is making salads.'# maximum frames are {act_total_frame_num[i]}'
         # Run inference on the video and add the output to the list
         output = video_chatgpt_infer(torch.from_numpy(sample).cuda(), question, conv_mode, model,
                                              tokenizer, video_token_len, seg_sizes[i], total_frame_num[i])

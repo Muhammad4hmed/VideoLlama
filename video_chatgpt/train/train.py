@@ -405,8 +405,14 @@ class LazySupervisedDataset(Dataset):
         if 'video' in sources[0]:
             video_file = self.list_data_dict[i]['video']
             video_folder = self.multimodal_cfg['video_folder']
+            print(f"found  {video_folder}/{video_file}" )
+            #\
             with open(f"{video_folder}/{video_file}", "rb") as f:
                 features = pickle.load(f)
+            # except:
+            #     print(f"{video_folder}/{video_file} is corrupt")
+            #     with open("/home/waleed/ahmed/LLM/Video-ChatGPT/features_breakfast_swin_v2/P03_cereals_bright_cam01.pkl",'rb') as f:
+            #         features = pickle.load(f)
 
             cur_token_len = 1000  # 100 temporal + 256 spatial, TODO: Hard Coding is not good
             sources = preprocess_multimodal(
@@ -484,6 +490,10 @@ def train():
     parser = transformers.HfArgumentParser(
         (ModelArguments, DataArguments, TrainingArguments))
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
+    print(torch.device("cuda:1"))
+    print(type(training_args))
+    #training_args.device = torch.device("cuda:1")
+
     
     # quant_config = BitsAndBytesConfig(
     #     load_in_4bit=True,
@@ -609,10 +619,11 @@ def train():
     # for i in range(model.model.num_layers):
     #     model.model.self_attention_layers[i].requires_grad_(True)
     model.model.embed_tokens.requires_grad_(True)
-    for i in range(25): 
-        model.model.reducers[i].requires_grad_(True)
-        model.model.projecters[i].requires_grad_(True)
-        model.model.pes[i].requires_grad_(True)
+    # for i in range(25): 
+    #     model.model.reducers[i].requires_grad_(True)
+    #     model.model.projecters[i].requires_grad_(True)
+    #     model.model.pes[i].requires_grad_(True)
+    model.model.pes.requires_grad_(True)
     model.model.norm.requires_grad_(True)
     # for i in range(32):
     #     model.base_model.model.model.layers[i].input_layernorm.requires_grad_(True)
@@ -626,17 +637,20 @@ def train():
         for name, param in model.named_parameters():
             # if param.requires_grad:
             f.write(str(name) + ' ' + str(param.numel()) + ' requires grad: ' + str(param.requires_grad) + '\n')
-    f.close()
-
+    f.close()   
+    
+    #training_args["device"] = torch.device("cuda:1")
     trainer = VideoChatGPTTrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
 
     # if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
     #     trainer.train(resume_from_checkpoint=True)
     # else:
+
+    print(training_args.output_dir)
     trainer.train()
     trainer.save_state()
     safe_save_model_for_hf_trainer(trainer=trainer, output_dir=training_args.output_dir)
-    model.save_pretrained("breakfast_finetuned_videochatgpt")
+    model.save_pretrained("fawad_pretrained_weights")
             
 
 

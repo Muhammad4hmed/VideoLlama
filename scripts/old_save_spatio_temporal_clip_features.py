@@ -111,12 +111,16 @@ def main():
                     min_ind = i * infer_batch
                     max_ind = (i + 1) * infer_batch
                     video_batch = video_tensor[min_ind:max_ind].cuda()
+                    print(f"Video batch SIZE = {video_batch.size()}")
+                    
 
                     image_forward_outs = vision_tower(video_batch, output_hidden_states=True)
 
                     select_hidden_state_layer = -2
                     select_hidden_state = image_forward_outs.hidden_states[select_hidden_state_layer]
                     batch_features = select_hidden_state[:, 1:]
+                    #print(batch_features.size())
+                    print(f"Batch featrue SIZE = {batch_features.size()}")
                     video_features[min_ind:max_ind] = batch_features.detach().cpu()
 
                 video_clip_features[video_id] = get_spatio_temporal_features(video_features.numpy().astype("float16"))

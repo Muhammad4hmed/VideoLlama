@@ -120,14 +120,15 @@ def main():
                 for question, answer in questions_and_answers.items():
                     question = question.replace('\n','')
                     answer = answer.replace('_', ' ')
-                    if j == 0: rep = 12
+                    if j == 0: rep = 12 
                     else: rep = 2
                     for k in range(rep):
                         if not augs[k % len(augs)] == '':
                             new_video = "_".join(video.split('_')[:-1]) + '_' + augs[k % len(augs)] + '_' + video.split('_')[-1]
                         else:
                             new_video = video # uncomment all
-                        #new_video = video + '_all'
+                        # #new_video = video + '_all'
+                       # new_video=video #new addtiion
                         output_content = {'id': new_video, 'video': f"{new_video}.pkl", 'conversations': []}
                         if i % 2 == 0:
                             output_content['conversations'].append({'from': 'human', 'value': f"{question}\n<video>"})

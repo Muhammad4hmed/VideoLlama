@@ -536,8 +536,8 @@ class LlamaModel(LlamaPreTrainedModel):
 
         self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size, self.padding_idx)
         self.layers = nn.ModuleList([LlamaDecoderLayer(config) for _ in range(config.num_hidden_layers)])
-        self.reducers = nn.ModuleList([nn.Linear(1000, 1) for _ in range(25)])
-        self.projecters = nn.ModuleList([nn.Linear(1024, 4096) for _ in range(25)])
+        # self.reducers = nn.ModuleList([nn.Linear(1000, 1) for _ in range(25)])
+        # self.projecters = nn.ModuleList([nn.Linear(1024, 4096) for _ in range(25)])
         # self.cross_attention = MultiHeadAttention(config.hidden_size, 1024, config.hidden_size, 1)
         self.norm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
@@ -681,12 +681,18 @@ class LlamaModel(LlamaPreTrainedModel):
                     output_attentions=output_attentions,
                     use_cache=use_cache,
                 )
-            if idx >= 25: idx = 24
-            vid_features = self.reducers[idx](video_features[:,:,idx,:].transpose(1,2)).squeeze(2)
-            # vid_features = torch.stack([vid_features, vid_features, vid_features, vid_features],axis=1).view(vid_features.shape[0],-1)
-            vid_features = self.projecters[idx](vid_features)
+            # if idx >= 25: idx = 24
+            # #vid_features = self.reducers[idx](video_features[:,:,idx,:].transpose(1,2)).squeeze(2)
+            # vid_features = self.reducers[idx](video_features[:,:,:].transpose(1,2)).squeeze(2)  #works for training
+            # #vid_features = torch.stack([vid_features, vid_features, vid_features, vid_features],axis=1).view(vid_features.shape[0],-1)
+            # vid_features = self.projecters[idx](vid_features)
+            # if idx >= 25: idx = 24
+            # vid_features = self.reducers[idx](video_features[:,:,idx,:].transpose(1,2)).squeeze(2)
+            # # vid_features = torch.stack([vid_features, vid_features, vid_features, vid_features],axis=1).view(vid_features.shape[0],-1)
+            # vid_features = self.projecters[idx](vid_features)
     
-            hidden_states = layer_outputs[0] + 0.1 * vid_features
+            # hidden_states = layer_outputs[0] + 0.1 * vid_features
+            hidden_states = layer_outputs[0] 
 
             if use_cache:
                 next_decoder_cache += (layer_outputs[2 if output_attentions else 1],)

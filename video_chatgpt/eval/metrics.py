@@ -67,7 +67,7 @@ def compute_f1_score(tp, fp, fn):
     f1 = 2 * (precision * recall) / (precision + recall + 1e-10)
     return f1
 
-def f_score_overlap(recognized, ground_truth, overlap, bg_class=["backgroundbackgroundbackgroundbackgroundbackgroundbackgroundbackground"]):
+def f_score_overlap_og(recognized, ground_truth, overlap, bg_class=["backgroundbackgroundbackgroundbackgroundbackgroundbackgroundbackground"]):
     p_label, p_start, p_end = get_labels_start_end_time(recognized, bg_class)
     y_label, y_start, y_end = get_labels_start_end_time(ground_truth, bg_class)
 
@@ -90,6 +90,44 @@ def f_score_overlap(recognized, ground_truth, overlap, bg_class=["backgroundback
             fp += 1
     fn = len(y_label) - sum(hits)
     return compute_f1_score(float(tp), float(fp), float(fn))
+
+
+def f_score_overlap(recognized, ground_truth, overlap, bg_class=["backgroundbackgroundbackgroundbackgroundbackgroundbackgroundbackground"]):
+    p_label, p_start, p_end = get_labels_start_end_time(recognized, bg_class)
+    y_label, y_start, y_end = get_labels_start_end_time(ground_truth, bg_class)
+
+    tp = 0
+    fp = 0
+
+    hits = np.zeros(len(y_label))
+
+    for j in range(len(p_label)):
+        intersection = np.minimum(p_end[j], y_end) - np.maximum(p_start[j], y_start)
+        union = np.maximum(p_end[j], y_end) - np.minimum(p_start[j], y_start)
+
+        # Check for zero division in union calculation
+        zero_division_mask = union != 0
+        IoU = np.zeros(len(y_label))  # Initialize IoU array
+
+        # Calculate IoU only where union is not zero
+        IoU[zero_division_mask] = (1.0 * intersection[zero_division_mask] / union[zero_division_mask]) * ([p_label[j] == y_label[x] for x in range(len(y_label))])
+
+        # Check if IoU array is empty or contains only zeros
+        if np.any(IoU):
+            # Get the best scoring segment
+            idx = np.array(IoU).argmax()
+
+            if IoU[idx] >= overlap and not hits[idx]:
+                tp += 1
+                hits[idx] = 1
+            else:
+                fp += 1
+        else:
+            fp += 1  # Increment false positive when IoU is empty or contains only zeros
+
+    fn = len(y_label) - sum(hits)
+    return compute_f1_score(float(tp), float(fp), float(fn))
+
 
 def get_scores(json_file):
     f1_scores = []
@@ -130,11 +168,11 @@ def get_scores(json_file):
                     continue
             
             score = f1_score(lis, pred, average='weighted')
-            f1_25 = f_score_overlap(lis, pred, overlap = 0.25)
+            f1_25 = f_score_overlap(pred, lis, overlap = 0.25)
             acc = accuracy_score(lis, pred)
-            # print('='*10,'\n',sample['name'])
-            # print('f1 score:', score)
-            # print('MOF:', acc)
+            # # print('='*10,'\n',sample['name'])
+            # # print('f1 score:', score)
+            # # print('MOF:', acc)
             f1_scores.append(score)
             f1_25_scores.append(f1_25)
             acc_scores.append(acc)
@@ -157,9 +195,10 @@ def get_scores(json_file):
 
             # print('spearman corr:', spear)
             sp_scores.append(spear)
-        except:
+        except Exception as e:
             error += 1
-            # print('Error on', sample['name'])
+            print(e)
+            print('Error on', sample['name'])
 
     f1_scores = np.mean(f1_scores)
     f1_25_scores = np.mean(f1_25_scores)
@@ -177,4 +216,4 @@ def get_scores(json_file):
     print('Total Errors: ', error)
 
 if __name__ == "__main__":
-    get_scores('Predictions/Predictions_Breakfast.json')
+    get_scores('/home/waleed/ahmed/LLM/Video-ChatGPT/Predictions/Predictions_Breakfast.json')

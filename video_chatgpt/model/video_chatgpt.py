@@ -15,7 +15,7 @@ DEFAULT_VID_END_TOKEN = "<vid_end>"
 
 class VisionConfig:
     def __init__(self):
-        self.temporal_size = 1000
+        self.temporal_size = 1000 #1000 original
         self.frame_size = 224
         self.patch_size = 14
         self.hidden_size = 1024
@@ -33,12 +33,16 @@ class LearnablePositionalEncoding(nn.Module):
         super(LearnablePositionalEncoding, self).__init__()
         self.positional_encodings = nn.Parameter(torch.randn(max_seq_len, d_model))
 
+
     def forward(self, x):
-        # Add the positional encodings to the input tensor
+     
         return x + self.positional_encodings
+       
+        # Add the positional encodings to the input tensor
+        #return x + self.positional_encodings
 
 
-class MultiHeadSelfAttention(nn.Module):
+class MultiHeadSelfAttentFion(nn.Module):
     def __init__(self, d_model, num_heads):
         super(MultiHeadSelfAttention, self).__init__()
         self.num_heads = num_heads
@@ -90,10 +94,10 @@ class VideoChatGPTLlamaModel(LlamaModel):
         
         if hasattr(config, "mm_vision_tower"):
             self.vision_config = VisionConfig()
-        self.pes = nn.ModuleList([LearnablePositionalEncoding(self.vision_config.temporal_size, 1024) for _ in range(25)])
-        
+        #self.pes = nn.ModuleList([LearnablePositionalEncoding(self.vision_config.temporal_size, 1024) for _ in range(25)])#cross attention
+        self.pes = LearnablePositionalEncoding(self.vision_config.temporal_size, 1024)
         if hasattr(config, "use_mm_proj"):
-            self.mm_projector = nn.Linear(config.mm_hidden_size, config.hidden_size)
+            self.mm_projector = nn.Linear(1024, config.hidden_size)
         
         # self.num_layers = 32
         # self.self_attention_layers = nn.ModuleList([
@@ -132,24 +136,41 @@ class VideoChatGPTLlamaModel(LlamaModel):
             return_dict: Optional[bool] = None,
     ) -> Union[Tuple, BaseModelOutputWithPast]:
         orig_embeds_params = getattr(self, 'orig_embeds_params', None)
-        # if orig_embeds_params is not None:
-        #     orig_embeds_params = orig_embeds_params[0]
-        #     with torch.no_grad():
-        #         self.get_input_embeddings().weight.data[:-2] = orig_embeds_params[:-2].data
+        if orig_embeds_params is not None:
+            orig_embeds_params = orig_embeds_params[0]
+            with torch.no_grad():
+                self.get_input_embeddings().weight.data[:-2] = orig_embeds_params[:-2].data
         if inputs_embeds is None:
             inputs_embeds = self.embed_tokens(input_ids)
         if (input_ids.shape[1] != 1 or self.training) and video_spatio_temporal_features is not None:
+            
+            video_spatio_temporal_features=self.pes(video_spatio_temporal_features) #put it after mm_projection
+           # print("video spatio temporal feateures shape = " + str(video_spatio_temporal_features.shape))
+    
             # print(video_spatio_temporal_features)
-            for i,pe in enumerate(self.pes):
-                video_spatio_temporal_features[:,:,i,:] = pe(video_spatio_temporal_features[:,:,i,:])
+            # for i,pe in enumerate(self.pes):
+            #     # print(i)
+            #     #print(video_spatio_temporal_features.shape)
+            #     # print(video_spatio_temporal_features)
+            #     #video_spatio_temporal_features[0,:,:] = pe(video_spatio_temporal_features[0,:,:]) #works for training
+            #     # modified_slice = pe(video_spatio_temporal_features[:, i, :])
+            #     # modified_slice = modified_slice.unsqueeze(0)
+            #     # video_spatio_temporal_features[:, i, :] = modified_slice.squeeze(0)
+            #     #print(video_spatio_temporal_features.shape)
+            #     video_spatio_temporal_features[:,:,i,:] = pe(video_spatio_temporal_features[:,:,i,:])
+                #video_spatio_temporal_features[0,:,:] = pe(video_spatio_temporal_features[0,:,:])
+               
             # print(video_spatio_temporal_features)
             
             # for i in range(self.num_layers):
             #     video_spatio_temporal_features = self.self_attention_layers[i](video_spatio_temporal_features)
             # print(video_spatio_temporal_features)
-            
-            video_features = self.mm_projector(video_spatio_temporal_features[:,:,-1,:])
+            #print(video_spatio_temporal_features.shape)
+            video_features = self.mm_projector(video_spatio_temporal_features) #works for training 
+
+            #video_features = self.mm_projector(video_spatio_temporal_features[:,:,-1,:])
             # print(video_features)
+          #  print("video feateures shape = " + str(video_features.shape))
             
             dummy_video_features = torch.zeros(video_features.shape[1], 1024, device=inputs_embeds.device,
                                                dtype=inputs_embeds.dtype)
@@ -173,7 +194,8 @@ class VideoChatGPTLlamaModel(LlamaModel):
                         cur_video_features = video_features[cur_video_idx].to(device=cur_input_embeds.device)
                         num_patches = cur_video_features.shape[0]
                         if cur_input_ids[video_start_token_pos + num_patches + 1] != self.vision_config.vid_end_token:
-                            raise ValueError("The video end token should follow the video start token.")
+                            #raise ValueError("The video end token should follow the video start token.")
+                            yyy=1
                         if orig_embeds_params is not None:
                             cur_new_input_embeds = torch.cat((cur_input_embeds[:video_start_token_pos].detach(),
                                                               cur_input_embeds[

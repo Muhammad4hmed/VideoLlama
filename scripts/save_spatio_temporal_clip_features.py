@@ -113,11 +113,11 @@ def main():
             for action in tqdm(glob.glob(cam + '/*.avi')):
                 try:
                     video_path = action #f"{video_dir_path}/{video_name}"
-                    # cont = False
-                    # for aug in augs:
-                    #     if aug in video_path:
-                    #         cont = True
-                    # if cont: continue
+                    cont = False # removing augmentations
+                    for aug in augs:
+                        if aug in video_path:
+                            cont = True
+                    if cont: continue #
                     
                     video_id = action.split('/')[-1].split('.')[0] + '_' + cam.split('/')[-1] #video_name.split('.')[0]
                     if os.path.exists(f"{clip_feat_path}/{video_id}.pkl"):  # Check if the file is already processed

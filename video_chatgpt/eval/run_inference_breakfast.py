@@ -18,7 +18,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     # Define the command-line arguments
-    parser.add_argument('--feature_dir', help='Directory containing video files.', required=False, default = "/home/waleed/ahmed/LLM/Video-ChatGPT/features_breakfast_fawad_final-v2")
+    parser.add_argument('--feature_dir', help='Directory containing video files.', required=False, default = "/home/waleed/ahmed/LLM/Video-ChatGPT/features_breakfast_swin_v2")
     parser.add_argument('--gt_dir', help='Directory containing ground truths.', required=False, default = "/home/waleed/ahmed/LLM/Breakfast/Videos/BreakfastII_15fps_qvga_sync")
     #parser.add_argument('--gt_dir', help='Directory containing ground truths.', required=False, default = "/home/waleed/ahmed/LLM/Breakfast/Breakfast")
     

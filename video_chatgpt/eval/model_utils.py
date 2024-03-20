@@ -103,7 +103,7 @@ def initialize_model(model_name, projection_path=None):
     except:
         tokenizer = AutoTokenizer.from_pretrained('mmaaz60/LLaVA-7B-Lightening-v1-1')
     # Load model
-    model = VideoChatGPTLlamaForCausalLM.from_pretrained(model_name, low_cpu_mem_usage=True, torch_dtype=torch.float16,
+    model = VideoChatGPTLlamaForCausalLM.from_pretrained(model_name, low_cpu_mem_usage=False, torch_dtype=torch.float16,
                                                          use_cache=True)
 
     # Load image processor
@@ -133,7 +133,7 @@ def initialize_model(model_name, projection_path=None):
         print(f"Weights loaded from {projection_path}")
     # Set model to evaluation mode and move to GPU
     model = model.eval()
-    model = model.cuda()
+    model = model.cuda(device=1)
 
     vision_tower_name = "openai/clip-vit-large-patch14"
 
@@ -151,6 +151,6 @@ def initialize_model(model_name, projection_path=None):
             [DEFAULT_VID_START_TOKEN, DEFAULT_VID_END_TOKEN])
 
     # Set video token length
-    video_token_len = 1000 # 356
+    video_token_len = 1000 #1000 # 356
 
     return model, tokenizer, video_token_len

@@ -10,7 +10,7 @@ from video_chatgpt.demo.gradio_patch import Chatbot as grChatbot
 from video_chatgpt.utils import disable_torch_init
 from video_chatgpt.demo.chat import Chat
 from video_chatgpt.demo.template import tos_markdown, css, title, disclaimer, Seafoam
-from video_chatgpt.eval.model_utils import initialize_model
+from video_chatgpt.eval.new_utils import initialize_model
 from video_chatgpt.constants import *
 
 import logging

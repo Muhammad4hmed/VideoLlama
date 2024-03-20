@@ -109,8 +109,8 @@ def video_chatgpt_infer(video_spatio_temporal_features, question, conv_mode, mod
             video_spatio_temporal_features=video_spatio_temporal_features.unsqueeze(0),
             do_sample=True,
             temperature=0.2,
-            max_new_tokens=1024,
-            top_k=25,
+            max_new_tokens=1024,#try with 2048
+            top_k=25,# try removing this
             stopping_criteria=[stopping_criteria])
 
     # Check if output is the same as input
@@ -124,6 +124,6 @@ def video_chatgpt_infer(video_spatio_temporal_features, question, conv_mode, mod
     # Clean output string
     # for output in outputs:
     outputs = outputs.strip().rstrip(stop_str).strip()
-    outputs = multiply_numbers_if_starts_with(outputs, seg_size)
+    #outputs = multiply_numbers_if_starts_with(outputs, seg_size)
 
     return outputs
